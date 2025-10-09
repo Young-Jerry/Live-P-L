@@ -1,1 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NEPSE P/L Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>NEPSE Portfolio P/L Tracker</h1>
+        
+        <table id="stocksTable">
+            <thead>
+                <tr>
+                    <th>Scrip</th>
+                    <th>Quantity</th>
+                    <th>WACC Rate</th>
+                    <th>Total Cost</th>
+                    <th>LTP</th>
+                    <th>Current Value</th>
+                    <th>Profit / Loss</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data populated by JS -->
+            </tbody>
+        </table>
 
+        <h2>Total Portfolio P/L: <span id="totalPL">0</span></h2>
+        <h2>Total Portfolio Value: <span id="totalValue">0</span></h2>
+
+        <canvas id="plChart" width="1000" height="400"></canvas>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
