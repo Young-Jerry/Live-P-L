@@ -266,7 +266,7 @@ const initialStocks = [
     }
 
     async function fetchPricesFromAPI() {
-      const symbols = stocks.map(s => s.symbol);
+const symbols = ['GHL', 'HBL', 'LUK', 'NGPL', 'SNLI'];
       const proxyUrl = 'https://corsproxy.io/?'; // <-- CORS proxy here
       console.log('→ fetchPricesFromAPI() called at', new Date().toLocaleTimeString());
 
