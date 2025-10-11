@@ -133,11 +133,35 @@
     const TICK = 5000; // 5 secs
     const HIST_LEN = 60;
 
-    const initialStocks = [
-      { symbol: 'API', shares: 360, buyPrice: 301.1552 },
-      { symbol: 'CFCL', shares: 27, buyPrice: 100 },
-      { symbol: 'CLI', shares: 13, buyPrice: 210.7692 }
-    ];
+const initialStocks = [
+  { symbol: 'API', shares: 360, buyPrice: 108415.872 / 360 }, // ≈ 301.1552
+  { symbol: 'CFCL', shares: 27, buyPrice: 100 },
+  { symbol: 'CLI', shares: 13, buyPrice: 2740 / 13 },         // ≈ 210.7692
+  { symbol: 'GHL', shares: 90, buyPrice: 100 },
+  { symbol: 'HBL', shares: 10, buyPrice: 157 },
+  { symbol: 'HIDCL', shares: 72, buyPrice: 100 },
+  { symbol: 'HLI', shares: 12, buyPrice: 100 },
+  { symbol: 'HPPL', shares: 10, buyPrice: 100 },
+  { symbol: 'ILI', shares: 12, buyPrice: 2569.1 / 12 },        // ≈ 214.0917
+  { symbol: 'JBBL', shares: 19, buyPrice: 100 },
+  { symbol: 'LUK', shares: 500, buyPrice: 10 },
+  { symbol: 'MBJC', shares: 10, buyPrice: 100 },
+  { symbol: 'NADEP', shares: 30, buyPrice: 100 },
+  { symbol: 'NGPL', shares: 93, buyPrice: 100 },
+  { symbol: 'NIFRA', shares: 54, buyPrice: 100 },
+  { symbol: 'NIMB', shares: 125, buyPrice: 100 },
+  { symbol: 'NMB', shares: 74, buyPrice: 100 },
+  { symbol: 'NRN', shares: 11, buyPrice: 100 },
+  { symbol: 'RHPL', shares: 40, buyPrice: 100 },
+  { symbol: 'RNLI', shares: 12, buyPrice: 2770 / 12 },         // ≈ 230.8333
+  { symbol: 'SCB', shares: 25, buyPrice: 576 },
+  { symbol: 'SGIC', shares: 10, buyPrice: 100 },
+  { symbol: 'SJCL', shares: 20, buyPrice: 100 },
+  { symbol: 'SNLI', shares: 16, buyPrice: 186.875 },
+  { symbol: 'SSIS', shares: 93, buyPrice: 10 },
+  { symbol: 'UAIL', shares: 10, buyPrice: 100 }
+];
+
 
     let stocks = JSON.parse(localStorage.getItem('stocks') || 'null');
     if (!stocks) {
