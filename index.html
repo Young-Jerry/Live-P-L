@@ -130,45 +130,46 @@
   </div>
 
   <script>
-    const TICK = 5000; // 5 secs
+    const TICK = 5000; // 5 seconds
     const HIST_LEN = 60;
 
-const initialStocks = [
-  { symbol: 'API', shares: 360, buyPrice: 108415.872 / 360 }, // ≈ 301.1552
-  { symbol: 'CFCL', shares: 27, buyPrice: 100 },
-  { symbol: 'CLI', shares: 13, buyPrice: 2740 / 13 },         // ≈ 210.7692
-  { symbol: 'GHL', shares: 90, buyPrice: 100 },
-  { symbol: 'HBL', shares: 10, buyPrice: 157 },
-  { symbol: 'HIDCL', shares: 72, buyPrice: 100 },
-  { symbol: 'HLI', shares: 12, buyPrice: 100 },
-  { symbol: 'HPPL', shares: 10, buyPrice: 100 },
-  { symbol: 'ILI', shares: 12, buyPrice: 2569.1 / 12 },        // ≈ 214.0917
-  { symbol: 'JBBL', shares: 19, buyPrice: 100 },
-  { symbol: 'LUK', shares: 500, buyPrice: 10 },
-  { symbol: 'MBJC', shares: 10, buyPrice: 100 },
-  { symbol: 'NADEP', shares: 30, buyPrice: 100 },
-  { symbol: 'NGPL', shares: 93, buyPrice: 100 },
-  { symbol: 'NIFRA', shares: 54, buyPrice: 100 },
-  { symbol: 'NIMB', shares: 125, buyPrice: 100 },
-  { symbol: 'NMB', shares: 74, buyPrice: 100 },
-  { symbol: 'NRN', shares: 11, buyPrice: 100 },
-  { symbol: 'RHPL', shares: 40, buyPrice: 100 },
-  { symbol: 'RNLI', shares: 12, buyPrice: 2770 / 12 },         // ≈ 230.8333
-  { symbol: 'SCB', shares: 25, buyPrice: 576 },
-  { symbol: 'SGIC', shares: 10, buyPrice: 100 },
-  { symbol: 'SJCL', shares: 20, buyPrice: 100 },
-  { symbol: 'SNLI', shares: 16, buyPrice: 186.875 },
-  { symbol: 'SSIS', shares: 93, buyPrice: 10 },
-  { symbol: 'UAIL', shares: 10, buyPrice: 100 }
-];
+    const initialStocks = [
+      { symbol: 'API', shares: 360, buyPrice: 108415.872 / 360 }, // ≈ 301.1552
+      { symbol: 'CFCL', shares: 27, buyPrice: 100 },
+      { symbol: 'CLI', shares: 13, buyPrice: 2740 / 13 },         // ≈ 210.7692
+      { symbol: 'GHL', shares: 90, buyPrice: 100 },
+      { symbol: 'HBL', shares: 10, buyPrice: 157 },
+      { symbol: 'HIDCL', shares: 72, buyPrice: 100 },
+      { symbol: 'HLI', shares: 12, buyPrice: 100 },
+      { symbol: 'HPPL', shares: 10, buyPrice: 100 },
+      { symbol: 'ILI', shares: 12, buyPrice: 2569.1 / 12 },        // ≈ 214.0917
+      { symbol: 'JBBL', shares: 19, buyPrice: 100 },
+      { symbol: 'LUK', shares: 500, buyPrice: 10 },
+      { symbol: 'MBJC', shares: 10, buyPrice: 100 },
+      { symbol: 'NADEP', shares: 30, buyPrice: 100 },
+      { symbol: 'NGPL', shares: 93, buyPrice: 100 },
+      { symbol: 'NIFRA', shares: 54, buyPrice: 100 },
+      { symbol: 'NIMB', shares: 125, buyPrice: 100 },
+      { symbol: 'NMB', shares: 74, buyPrice: 100 },
+      { symbol: 'NRN', shares: 11, buyPrice: 100 },
+      { symbol: 'RHPL', shares: 40, buyPrice: 100 },
+      { symbol: 'RNLI', shares: 12, buyPrice: 2770 / 12 },         // ≈ 230.8333
+      { symbol: 'SCB', shares: 25, buyPrice: 576 },
+      { symbol: 'SGIC', shares: 10, buyPrice: 100 },
+      { symbol: 'SJCL', shares: 20, buyPrice: 100 },
+      { symbol: 'SNLI', shares: 16, buyPrice: 186.875 },
+      { symbol: 'SSIS', shares: 93, buyPrice: 10 },
+      { symbol: 'UAIL', shares: 10, buyPrice: 100 }
+    ];
 
-
+    // Load stocks from localStorage or use initial stocks
     let stocks = JSON.parse(localStorage.getItem('stocks') || 'null');
     if (!stocks) {
       stocks = initialStocks.map(s => ({ ...s, price: s.buyPrice }));
       localStorage.setItem('stocks', JSON.stringify(stocks));
     }
 
+    // DOM elements
     const profitEl = document.getElementById('profit');
     const capitalEl = document.getElementById('capital');
     const bullishEl = document.getElementById('bullish');
@@ -176,6 +177,7 @@ const initialStocks = [
     const stockListEl = document.getElementById('stockList');
     const timerEl = document.getElementById('timer');
 
+    // Chart setup
     const ctx = document.getElementById('chart').getContext('2d');
     const chartData = Array(HIST_LEN).fill(0);
     const config = {
@@ -228,16 +230,23 @@ const initialStocks = [
     };
     const myChart = new Chart(ctx, config);
 
+    // Render stock list UI
     function renderStockList() {
       stockListEl.innerHTML = '';
       stocks.forEach(s => {
         const div = document.createElement('div');
         div.className = 'stock-item';
-        div.innerHTML = `<div><span class="stock-symbol">${s.symbol}</span> &nbsp;<span style="opacity:0.7">x${s.shares}</span></div><div class="stock-price">₹${s.price.toFixed(2)}</div>`;
+        div.innerHTML = `
+          <div>
+            <span class="stock-symbol">${s.symbol}</span> &nbsp;<span style="opacity:0.7">x${s.shares}</span>
+          </div>
+          <div class="stock-price">₹${s.price.toFixed(2)}</div>
+        `;
         stockListEl.appendChild(div);
       });
     }
 
+    // Calculate metrics
     function computeMetrics() {
       const totalMarket = stocks.reduce((sum, s) => sum + s.price * s.shares, 0);
       const totalCost = stocks.reduce((sum, s) => sum + s.buyPrice * s.shares, 0);
@@ -247,83 +256,93 @@ const initialStocks = [
       return { totalMarket, totalCost, netProfit, bullish, bearish };
     }
 
+    // Update UI metrics
     function updateUI(metrics) {
       profitEl.innerText = (metrics.netProfit >= 0 ? '₹' : '-₹') + Math.abs(metrics.netProfit).toFixed(2);
       capitalEl.innerText = '₹' + metrics.totalMarket.toFixed(2);
       bullishEl.innerText = metrics.bullish;
       bearishEl.innerText = metrics.bearish;
+
+      // Profit color toggle
+      profitEl.classList.toggle('profit', metrics.netProfit < 0);
+      profitEl.classList.toggle('bullish', metrics.netProfit >= 0);
     }
 
+    // Update chart with new profit value
     function pushChartValue(val) {
       const data = myChart.data.datasets[0].data;
       data.push(+val.toFixed(2));
       if (data.length > HIST_LEN) data.shift();
-      const mx = Math.max(...data.map(Math.abs));
-      const pad = Math.max(50, mx * 1.1);
+
+      const maxAbs = Math.max(...data.map(Math.abs));
+      const pad = Math.max(50, maxAbs * 1.1);
+
       myChart.options.scales.y.min = -pad;
       myChart.options.scales.y.max = pad;
       myChart.update();
     }
 
+    // Fetch prices from API
     async function fetchPricesFromAPI() {
-const symbols = ['GHL', 'HBL', 'LUK', 'NGPL', 'SNLI'];
-      const proxyUrl = 'https://corsproxy.io/?'; // <-- CORS proxy here
-      console.log('→ fetchPricesFromAPI() called at', new Date().toLocaleTimeString());
+      const symbols = ['GHL', 'HBL', 'LUK', 'NGPL', 'SNLI'];
+      const proxyUrl = 'https://corsproxy.io/?'; // CORS proxy
 
       try {
         const results = await Promise.all(symbols.map(async symbol => {
           const url = `${proxyUrl}https://nepsetty.kokomo.workers.dev/api/stock?symbol=${symbol}`;
-          console.log('Fetching URL:', url);
           const res = await fetch(url);
-          console.log('Response status for', symbol, res.status);
+          if (!res.ok) throw new Error(`Failed to fetch ${symbol}: ${res.status}`);
           const data = await res.json();
-          console.log('Data for', symbol, data);
           return { symbol, price: data.ltp };
         }));
 
-        results.forEach(np => {
-          if (np.price != null) {
-            const s = stocks.find(x => x.symbol === np.symbol);
-            if (s) {
-              console.log(`Updating ${np.symbol}: ${s.price} → ${np.price}`);
-              s.price = +np.price;
-            }
+        results.forEach(({ symbol, price }) => {
+          if (price != null) {
+            const stock = stocks.find(s => s.symbol === symbol);
+            if (stock) stock.price = +price;
           }
         });
 
-        console.log('Stocks after update:', stocks);
         localStorage.setItem('stocks', JSON.stringify(stocks));
         renderStockList();
+
         const metrics = computeMetrics();
         updateUI(metrics);
         pushChartValue(metrics.netProfit);
 
-      } catch (err) {
-        console.error('Error in fetchPricesFromAPI:', err);
+      } catch (error) {
+        console.error('Error fetching prices:', error);
       }
     }
 
+    // Initial render and chart update
     renderStockList();
-    updateUI(computeMetrics());
-    pushChartValue(computeMetrics().netProfit);
+    const initialMetrics = computeMetrics();
+    updateUI(initialMetrics);
+    pushChartValue(initialMetrics.netProfit);
 
-    let sec = TICK / 1000;
+    // Timer countdown and periodic fetch
+    let secondsRemaining = TICK / 1000;
+    timerEl.innerText = secondsRemaining + 's';
+
     setInterval(() => {
-      sec--;
-      if (sec <= 0) {
+      secondsRemaining--;
+      if (secondsRemaining <= 0) {
         fetchPricesFromAPI();
-        sec = TICK / 1000;
+        secondsRemaining = TICK / 1000;
       }
-      timerEl.innerText = sec + 's';
+      timerEl.innerText = secondsRemaining + 's';
     }, 1000);
 
+    // Expose method for manual price updates (if needed)
     window.fetchAndApplyPrices = function(newPrices) {
-      newPrices.forEach(np => {
-        const s = stocks.find(x => x.symbol === np.symbol);
-        if (s) s.price = +np.price;
+      newPrices.forEach(({ symbol, price }) => {
+        const stock = stocks.find(s => s.symbol === symbol);
+        if (stock) stock.price = +price;
       });
       localStorage.setItem('stocks', JSON.stringify(stocks));
       renderStockList();
+
       const metrics = computeMetrics();
       updateUI(metrics);
       pushChartValue(metrics.netProfit);
