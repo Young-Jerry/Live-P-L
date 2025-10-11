@@ -12,40 +12,37 @@
         <h1>NEPSE Portfolio P/L Tracker</h1>
 
         <div class="summary">
-            <h2>Total Portfolio P/L: <span id="totalPL">0</span></h2>
-            <h2>Total Portfolio Value: <span id="totalValue">0</span></h2>
-            <button id="exportBtn">Export CSV</button>
+            <div class="summary-left">
+                <h2>Total Portfolio P/L: <span id="totalPL">0.00</span></h2>
+                <h3>Total Portfolio Value: <span id="totalValue">0.00</span></h3>
+            </div>
+            <div class="summary-right">
+                <button id="exportBtn">Export CSV</button>
+            </div>
         </div>
 
         <div class="charts">
-            <canvas id="plChart" width="1000" height="300"></canvas>
-            <canvas id="allocationChart" width="400" height="300"></canvas>
+            <!-- MAIN P/L CHART ONLY -->
+            <canvas id="plChart" width="1200" height="350"></canvas>
         </div>
-
-        <input type="text" id="searchStock" placeholder="Search stock...">
 
         <table id="stocksTable">
             <thead>
                 <tr>
                     <th onclick="sortTable(0)">Scrip</th>
                     <th onclick="sortTable(1)">Quantity</th>
-                    <th onclick="sortTable(2)">WACC Rate</th>
+                    <th onclick="sortTable(2)">Avg Cost</th>
                     <th onclick="sortTable(3)">Total Cost</th>
                     <th onclick="sortTable(4)">LTP</th>
                     <th onclick="sortTable(5)">Current Value</th>
                     <th onclick="sortTable(6)">Profit / Loss</th>
-                    <th>Trend</th>
+                    <th>Spark</th>
                 </tr>
             </thead>
             <tbody>
                 <!-- Data populated by JS -->
             </tbody>
         </table>
-
-        <div class="alerts">
-            <h3>Alerts</h3>
-            <ul id="alertList"></ul>
-        </div>
     </div>
 
     <script src="script.js"></script>
