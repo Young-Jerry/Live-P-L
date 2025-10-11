@@ -262,7 +262,7 @@ async function fetchPricesFromAPI() {
     const results = await Promise.all(symbols.map(async (symbol) => {
       const res = await fetch(`https://nepsetty.kokomo.workers.dev/api/stock?symbol=${symbol}`);
       const data = await res.json();
-      return { symbol: symbol, price: data.price };
+      return { symbol: symbol, price: data.ltp };
     }));
 
     results.forEach(np => {
