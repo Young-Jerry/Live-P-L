@@ -243,11 +243,12 @@
 
     async function fetchPricesFromAPI() {
       const symbols = ['API', 'CFCL', 'CLI'];
+      const proxyUrl = 'https://corsproxy.io/?'; // <-- CORS proxy here
       console.log('→ fetchPricesFromAPI() called at', new Date().toLocaleTimeString());
 
       try {
         const results = await Promise.all(symbols.map(async symbol => {
-          const url = `https://nepsetty.kokomo.workers.dev/api/stock?symbol=${symbol}`;
+          const url = `${proxyUrl}https://nepsetty.kokomo.workers.dev/api/stock?symbol=${symbol}`;
           console.log('Fetching URL:', url);
           const res = await fetch(url);
           console.log('Response status for', symbol, res.status);
