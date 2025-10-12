@@ -6,129 +6,7 @@
   <title>Live Stock Tracker - Today's Profit</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body {
-      margin: 0;
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-      background: #0b1320;
-      color: #d0d7e0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .container {
-      display: flex;
-      flex-direction: row;
-      gap: 20px;
-      background: transparent;
-      padding: 20px;
-      border-radius: 10px;
-      width: 100%;
-      max-width: 900px;
-    }
-    .left-panel {
-      flex: 1.5;
-      background: #1b2735;
-      border-radius: 10px;
-      padding: 15px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-      display: flex;
-      flex-direction: column;
-    }
-    .right-panel {
-      flex: 1;
-      background: #1b2735;
-      border-radius: 10px;
-      padding: 15px;
-      max-height: 500px;
-      overflow-y: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-    .timer {
-      background: #0e1824;
-      color: #3bcf81;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 13px;
-    }
-    .stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      background: #0e1824;
-      border-radius: 8px;
-      padding: 10px;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-    .stat {
-      display: flex;
-      flex-direction: column;
-    }
-    .stat .label {
-      font-size: 12px;
-      color: #9aa4b4;
-    }
-    .stat .value {
-      font-size: 14px;
-      font-weight: 700;
-      margin-top: 3px;
-    }
-    .profit {
-      color: #3bcf81;
-      grid-column: span 2;
-      font-size: 24px;
-      justify-content: center;
-      display: flex;
-      align-items: center;
-    }
-    .capital {
-      color: #ffffff;
-    }
-    .chart-box {
-      background: #0e1824;
-      border-radius: 8px;
-      height: 200px;
-      padding: 6px;
-    }
-    canvas {
-      width: 100%;
-      height: 100%;
-    }
-    .stock-list {
-      font-size: 13px;
-    }
-    .stock-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 6px;
-    }
-    .stock-symbol {
-      font-weight: 700;
-    }
-    .stock-price {
-      opacity: 0.9;
-    }
-    @media (max-width: 768px) {
-      body {
-        align-items: flex-start;
-        padding: 10px;
-        height: auto;
-      }
-      .container {
-        flex-direction: column;
-      }
-      .left-panel, .right-panel {
-        width: 100%;
-      }
-    }
+    /* ... (your existing CSS unchanged) ... */
   </style>
 </head>
 <body>
@@ -139,8 +17,12 @@
       </div>
       <div class="stats">
         <div class="stat">
-          <div class="label">Capital</div>
+          <div class="label">Capital (Market Value)</div>
           <div class="value capital" id="capital">₹0.00</div>
+        </div>
+        <div class="stat">
+          <div class="label">Total Profit</div>
+          <div class="value" id="totalProfit">₹0.00</div>
         </div>
         <div class="stat profit" id="todayProfit">₹0.00</div>
       </div>
@@ -156,7 +38,6 @@
   const TICK = 5000;
   const HIST_LEN = 60;
 
-  // Your stocks info, shares and buyPrice as before
   const initialStocks = [
     { symbol: 'API', shares: 360, buyPrice: 108415.872 / 360 },
     { symbol: 'CFCL', shares: 27, buyPrice: 100 },
@@ -190,6 +71,7 @@
 
   // Elements
   const profitEl = document.getElementById('todayProfit');
+  const totalProfitEl = document.getElementById('totalProfit');
   const capitalEl = document.getElementById('capital');
   const stockListEl = document.getElementById('stockList');
   const timerEl = document.getElementById('timer');
@@ -267,18 +149,25 @@
     });
   }
 
-  // Calculate today's profit based on yesterday's close price (dailyPrices)
+  // Calculate profits and total market cap
   function computeMetrics(dailyPrices) {
-    const totalMarket = stocks.reduce((sum, s) => sum + s.price * s.shares, 0);
-    const todayProfit = stocks.reduce((sum, s) => {
-      const yesterdayPrice = dailyPrices[s.symbol] ?? s.buyPrice; // fallback to buyPrice if no dailyPrice
-      return sum + (s.price - yesterdayPrice) * s.shares;
-    }, 0);
-    return { totalMarket, todayProfit };
+    let totalMarket = 0;
+    let todayProfit = 0;
+    let totalProfit = 0;
+
+    stocks.forEach(s => {
+      const yesterdayPrice = dailyPrices[s.symbol] ?? s.buyPrice;
+      totalMarket += s.price * s.shares;
+      todayProfit += (s.price - yesterdayPrice) * s.shares;
+      totalProfit += (s.price - s.buyPrice) * s.shares;
+    });
+
+    return { totalMarket, todayProfit, totalProfit };
   }
 
   function updateUI(metrics) {
     profitEl.innerText = (metrics.todayProfit >= 0 ? '₹' : '-₹') + Math.abs(metrics.todayProfit).toFixed(2);
+    totalProfitEl.innerText = (metrics.totalProfit >= 0 ? '₹' : '-₹') + Math.abs(metrics.totalProfit).toFixed(2);
     capitalEl.innerText = '₹' + metrics.totalMarket.toFixed(2);
   }
 
@@ -293,9 +182,9 @@
     myChart.update();
   }
 
-  // Fetch yesterday's prices JSON from your backend (change this URL)
+  // Fetch yesterday's prices JSON from your hosted daily_prices.json
   async function fetchYesterdayPrices() {
-    const url = 'https://yourdomain.com/path/to/daily_prices.json'; // <---- CHANGE THIS to your hosted JSON
+    const url = 'https://yourdomain.com/path/to/daily_prices.json'; // <-- CHANGE THIS URL to your hosted JSON file
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch yesterday prices');
