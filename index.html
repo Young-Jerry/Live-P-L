@@ -1,38 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Live Stock Tracker - Today's Profit</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    /* ... (your existing CSS unchanged) ... */
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Live Stock Tracker - Today's Profit</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    margin: 0;
+    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+    background: #0b1320;
+    color: #d0d7e0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  .container {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    background: transparent;
+    padding: 20px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 900px;
+  }
+  .left-panel {
+    flex: 1.5;
+    background: #1b2735;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+  }
+  .right-panel {
+    flex: 1;
+    background: #1b2735;
+    border-radius: 10px;
+    padding: 15px;
+    max-height: 500px;
+    overflow-y: auto;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .timer {
+    background: #0e1824;
+    color: #3bcf81;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: #0e1824;
+    border-radius: 8px;
+    padding: 10px;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+  }
+  .stat .label {
+    font-size: 12px;
+    color: #9aa4b4;
+  }
+  .stat .value {
+    font-size: 14px;
+    font-weight: 700;
+    margin-top: 3px;
+  }
+  .profit {
+    color: #3bcf81;
+    grid-column: span 2;
+    font-size: 24px;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+  }
+  .capital {
+    color: #ffffff;
+  }
+  .chart-box {
+    background: #0e1824;
+    border-radius: 8px;
+    height: 200px;
+    padding: 6px;
+  }
+  canvas {
+    width: 100%;
+    height: 100%;
+  }
+  .stock-list {
+    font-size: 13px;
+  }
+  .stock-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .stock-symbol {
+    font-weight: 700;
+  }
+  .stock-price {
+    opacity: 0.9;
+  }
+  @media (max-width: 768px) {
+    body {
+      align-items: flex-start;
+      padding: 10px;
+      height: auto;
+    }
+    .container {
+      flex-direction: column;
+    }
+    .left-panel, .right-panel {
+      width: 100%;
+    }
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <div class="left-panel">
-      <div class="header">
-        📈 Live Stocks <span id="timer" class="timer">5s</span>
-      </div>
-      <div class="stats">
-        <div class="stat">
-          <div class="label">Capital (Market Value)</div>
-          <div class="value capital" id="capital">₹0.00</div>
-        </div>
-        <div class="stat">
-          <div class="label">Total Profit</div>
-          <div class="value" id="totalProfit">₹0.00</div>
-        </div>
-        <div class="stat profit" id="todayProfit">₹0.00</div>
-      </div>
-      <div class="chart-box"><canvas id="chart"></canvas></div>
+<div class="container">
+  <div class="left-panel">
+    <div class="header">
+      📈 Live Stocks <span id="timer" class="timer">5s</span>
     </div>
-
-    <div class="right-panel">
-      <div class="stock-list" id="stockList"></div>
+    <div class="stats">
+      <div class="stat">
+        <div class="label">Capital</div>
+        <div class="value capital" id="capital">₹0.00</div>
+      </div>
+      <div class="stat profit" id="todayProfit">₹0.00</div>
     </div>
+    <div class="chart-box"><canvas id="chart"></canvas></div>
   </div>
+  <div class="right-panel">
+    <div class="stock-list" id="stockList"></div>
+  </div>
+</div>
 
 <script>
   const TICK = 5000;
@@ -71,7 +188,6 @@
 
   // Elements
   const profitEl = document.getElementById('todayProfit');
-  const totalProfitEl = document.getElementById('totalProfit');
   const capitalEl = document.getElementById('capital');
   const stockListEl = document.getElementById('stockList');
   const timerEl = document.getElementById('timer');
@@ -102,7 +218,10 @@
       }]
     },
     options: {
-      animation: { duration: 600, easing: 'easeOutQuad' },
+      animation: {
+        duration: 600,
+        easing: 'easeOutQuad'
+      },
       responsive: true,
       maintainAspectRatio: false,
       scales: {
@@ -140,8 +259,7 @@
       div.className = 'stock-item';
       div.innerHTML = `
         <div>
-          <span class="stock-symbol">${s.symbol}</span> &nbsp;
-          <span style="opacity:0.7">x${s.shares}</span>
+          <span class="stock-symbol">${s.symbol}</span> &nbsp; <span style="opacity:0.7">x${s.shares}</span>
         </div>
         <div class="stock-price">₹${s.price.toFixed(2)}</div>
       `;
@@ -149,25 +267,18 @@
     });
   }
 
-  // Calculate profits and total market cap
+  // Calculate today's profit based on yesterday's close price (dailyPrices)
   function computeMetrics(dailyPrices) {
-    let totalMarket = 0;
-    let todayProfit = 0;
-    let totalProfit = 0;
-
-    stocks.forEach(s => {
-      const yesterdayPrice = dailyPrices[s.symbol] ?? s.buyPrice;
-      totalMarket += s.price * s.shares;
-      todayProfit += (s.price - yesterdayPrice) * s.shares;
-      totalProfit += (s.price - s.buyPrice) * s.shares;
-    });
-
-    return { totalMarket, todayProfit, totalProfit };
+    const totalMarket = stocks.reduce((sum, s) => sum + s.price * s.shares, 0);
+    const todayProfit = stocks.reduce((sum, s) => {
+      const yesterdayPrice = dailyPrices[s.symbol] ?? s.buyPrice; // fallback to buyPrice if no dailyPrice
+      return sum + (s.price - yesterdayPrice) * s.shares;
+    }, 0);
+    return { totalMarket, todayProfit };
   }
 
   function updateUI(metrics) {
     profitEl.innerText = (metrics.todayProfit >= 0 ? '₹' : '-₹') + Math.abs(metrics.todayProfit).toFixed(2);
-    totalProfitEl.innerText = (metrics.totalProfit >= 0 ? '₹' : '-₹') + Math.abs(metrics.totalProfit).toFixed(2);
     capitalEl.innerText = '₹' + metrics.totalMarket.toFixed(2);
   }
 
@@ -182,9 +293,9 @@
     myChart.update();
   }
 
-  // Fetch yesterday's prices JSON from your hosted daily_prices.json
+  // Fetch yesterday's prices JSON from local file in repo
   async function fetchYesterdayPrices() {
-    const url = 'https://yourdomain.com/path/to/daily_prices.json'; // <-- CHANGE THIS URL to your hosted JSON file
+    const url = './daily_prices.json';  // Local JSON file in same folder
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch yesterday prices');
@@ -199,7 +310,6 @@
   async function fetchLivePrices() {
     const symbols = stocks.map(s => s.symbol);
     const proxyUrl = 'https://corsproxy.io/?'; // CORS proxy if needed
-
     try {
       const results = await Promise.all(symbols.map(async symbol => {
         const url = `${proxyUrl}https://nepsetty.kokomo.workers.dev/api/stock?symbol=${symbol}`;
@@ -207,21 +317,17 @@
         const data = await res.json();
         return { symbol, price: data.ltp };
       }));
-
       results.forEach(np => {
         if (np.price != null) {
           const s = stocks.find(x => x.symbol === np.symbol);
           if (s) s.price = +np.price;
         }
       });
-
       renderStockList();
-
       const dailyPrices = await fetchYesterdayPrices();
       const metrics = computeMetrics(dailyPrices);
       updateUI(metrics);
       pushChartValue(metrics.todayProfit);
-
     } catch (err) {
       console.error('Fetch error:', err);
     }
@@ -239,7 +345,6 @@
     }
     timerEl.innerText = sec + 's';
   }, 1000);
-
 </script>
 </body>
 </html>
