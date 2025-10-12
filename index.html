@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Live Stock Tracker - Today's Profit</title>
+<title>Live Stock Tracker - Profit Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   body {
@@ -71,23 +71,19 @@
   .stat {
     display: flex;
     flex-direction: column;
+    text-align: center;
   }
   .stat .label {
     font-size: 12px;
     color: #9aa4b4;
   }
   .stat .value {
-    font-size: 14px;
+    font-size: 18px;
     font-weight: 700;
     margin-top: 3px;
   }
   .profit {
     color: #3bcf81;
-    grid-column: span 2;
-    font-size: 24px;
-    justify-content: center;
-    display: flex;
-    align-items: center;
   }
   .capital {
     color: #ffffff;
@@ -135,14 +131,21 @@
 <div class="container">
   <div class="left-panel">
     <div class="header">
-      📈 Live Stocks <span id="timer" class="timer">5s</span>
+      📈 Live Stocks <span id="time" class="timer"></span>
     </div>
     <div class="stats">
       <div class="stat">
         <div class="label">Capital</div>
         <div class="value capital" id="capital">₹0.00</div>
       </div>
-      <div class="stat profit" id="todayProfit">₹0.00</div>
+      <div class="stat">
+        <div class="label">Total Profit</div>
+        <div class="value profit" id="totalProfit">₹0.00</div>
+      </div>
+      <div class="stat">
+        <div class="label">Today's Profit</div>
+        <div class="value profit" id="todayProfit">₹0.00</div>
+      </div>
     </div>
     <div class="chart-box"><canvas id="chart"></canvas></div>
   </div>
@@ -186,16 +189,16 @@
 
   let stocks = initialStocks.map(s => ({ ...s, price: s.buyPrice }));
 
-  // Elements
   const profitEl = document.getElementById('todayProfit');
+  const totalProfitEl = document.getElementById('totalProfit');
   const capitalEl = document.getElementById('capital');
   const stockListEl = document.getElementById('stockList');
-  const timerEl = document.getElementById('timer');
+  const timeEl = document.getElementById('time');
   const ctx = document.getElementById('chart').getContext('2d');
 
   const chartData = Array(HIST_LEN).fill(0);
 
-  const config = {
+  const myChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: Array.from({ length: HIST_LEN }, (_, i) => i + 1),
@@ -206,28 +209,14 @@
         borderWidth: 2,
         pointRadius: 0,
         tension: 0.5,
-        fill: false,
-        segment: {
-          borderColor: ctx => {
-            const p0 = ctx.p0.parsed.y;
-            const p1 = ctx.p1.parsed.y;
-            const mid = (p0 + p1) / 2;
-            return mid >= 0 ? '#3bcf81' : '#ff2d55';
-          }
-        }
+        fill: false
       }]
     },
     options: {
-      animation: {
-        duration: 600,
-        easing: 'easeOutQuad'
-      },
+      animation: { duration: 600, easing: 'easeOutQuad' },
       responsive: true,
       maintainAspectRatio: false,
-      scales: {
-        x: { display: false },
-        y: { display: false }
-      },
+      scales: { x: { display: false }, y: { display: false } },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -248,9 +237,7 @@
         }
       }
     }
-  };
-
-  const myChart = new Chart(ctx, config);
+  });
 
   function renderStockList() {
     stockListEl.innerHTML = '';
@@ -267,17 +254,18 @@
     });
   }
 
-  // Calculate today's profit based on yesterday's close price (dailyPrices)
   function computeMetrics(dailyPrices) {
     const totalMarket = stocks.reduce((sum, s) => sum + s.price * s.shares, 0);
+    const totalProfit = stocks.reduce((sum, s) => sum + (s.price - s.buyPrice) * s.shares, 0);
     const todayProfit = stocks.reduce((sum, s) => {
-      const yesterdayPrice = dailyPrices[s.symbol] ?? s.buyPrice; // fallback to buyPrice if no dailyPrice
+      const yesterdayPrice = dailyPrices[s.symbol] ?? s.buyPrice;
       return sum + (s.price - yesterdayPrice) * s.shares;
     }, 0);
-    return { totalMarket, todayProfit };
+    return { totalMarket, totalProfit, todayProfit };
   }
 
   function updateUI(metrics) {
+    totalProfitEl.innerText = (metrics.totalProfit >= 0 ? '₹' : '-₹') + Math.abs(metrics.totalProfit).toFixed(2);
     profitEl.innerText = (metrics.todayProfit >= 0 ? '₹' : '-₹') + Math.abs(metrics.todayProfit).toFixed(2);
     capitalEl.innerText = '₹' + metrics.totalMarket.toFixed(2);
   }
@@ -286,18 +274,12 @@
     const data = myChart.data.datasets[0].data;
     data.push(+val.toFixed(2));
     if (data.length > HIST_LEN) data.shift();
-    const maxVal = Math.max(...data.map(Math.abs));
-    const pad = Math.max(50, maxVal * 1.1);
-    myChart.options.scales.y.min = -pad;
-    myChart.options.scales.y.max = pad;
     myChart.update();
   }
 
-  // Fetch yesterday's prices JSON from local file in repo
   async function fetchYesterdayPrices() {
-    const url = './daily_prices.json';  // Local JSON file in same folder
     try {
-      const res = await fetch(url);
+      const res = await fetch('./daily_prices.json');
       if (!res.ok) throw new Error('Failed to fetch yesterday prices');
       return await res.json();
     } catch (err) {
@@ -306,10 +288,9 @@
     }
   }
 
-  // Fetch live prices from API
   async function fetchLivePrices() {
     const symbols = stocks.map(s => s.symbol);
-    const proxyUrl = 'https://corsproxy.io/?'; // CORS proxy if needed
+    const proxyUrl = 'https://corsproxy.io/?';
     try {
       const results = await Promise.all(symbols.map(async symbol => {
         const url = `${proxyUrl}https://nepsetty.kokomo.workers.dev/api/stock?symbol=${symbol}`;
@@ -335,15 +316,11 @@
 
   renderStockList();
   fetchLivePrices();
+  setInterval(fetchLivePrices, TICK);
 
-  let sec = TICK / 1000;
   setInterval(() => {
-    sec--;
-    if (sec <= 0) {
-      fetchLivePrices();
-      sec = TICK / 1000;
-    }
-    timerEl.innerText = sec + 's';
+    const now = new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Kathmandu' });
+    timeEl.textContent = now;
   }, 1000);
 </script>
 </body>
