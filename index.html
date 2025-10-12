@@ -1,9 +1,9 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Stock Live Tracker - API/CFCL/CLI</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Stock Tracker</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
@@ -16,13 +16,38 @@
       align-items: center;
       height: 100vh;
     }
+
     .container {
-      width: 280px;
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      background: transparent;
+      padding: 20px;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .left-panel {
+      flex: 1.5;
       background: #1b2735;
       border-radius: 10px;
       padding: 15px;
       box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
     }
+
+    .right-panel {
+      flex: 1;
+      background: #1b2735;
+      border-radius: 10px;
+      padding: 15px;
+      max-height: 500px;
+      overflow-y: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
     .header {
       display: flex;
       justify-content: space-between;
@@ -30,6 +55,7 @@
       font-weight: 700;
       margin-bottom: 10px;
     }
+
     .timer {
       background: #0e1824;
       color: #3bcf81;
@@ -38,6 +64,7 @@
       border-radius: 6px;
       font-size: 13px;
     }
+
     .stats {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -45,289 +72,304 @@
       border-radius: 8px;
       padding: 10px;
       gap: 8px;
+      margin-bottom: 10px;
     }
+
     .stat {
       display: flex;
       flex-direction: column;
     }
+
     .stat .label {
       font-size: 12px;
       color: #9aa4b4;
     }
+
     .stat .value {
       font-size: 14px;
       font-weight: 700;
       margin-top: 3px;
     }
+
     .profit { color: #e8505b; }
     .capital { color: #ffffff; }
     .bullish { color: #3bcf81; }
     .bearish { color: #e8505b; }
+
     .chart-box {
       background: #0e1824;
       border-radius: 8px;
-      margin-top: 10px;
-      height: 150px;
+      height: 200px;
       padding: 6px;
     }
+
     canvas {
       width: 100%;
       height: 100%;
     }
+
     .stock-list {
-      margin-top: 10px;
-      background: transparent;
-      border-radius: 6px;
-      padding: 6px;
       font-size: 13px;
     }
+
     .stock-item {
       display: flex;
       justify-content: space-between;
       margin-bottom: 6px;
     }
+
     .stock-symbol {
       font-weight: 700;
     }
+
     .stock-price {
       opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        align-items: flex-start;
+        padding: 10px;
+        height: auto;
+      }
+      .container {
+        flex-direction: column;
+      }
+      .left-panel, .right-panel {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">📈 Live Stocks <span id="timer" class="timer">5s</span></div>
-  <div class="stats">
-    <div class="stat">
-      <div class="label">Profit (Net)</div>
-      <div class="value profit" id="profit">₹0.00</div>
+  <div class="container">
+    <div class="left-panel">
+      <div class="header">📈 Live Stocks <span id="timer" class="timer">5s</span></div>
+      <div class="stats">
+        <div class="stat">
+          <div class="label">Profit (Net)</div>
+          <div class="value profit" id="profit">₹0.00</div>
+        </div>
+        <div class="stat">
+          <div class="label">Bullish Stocks</div>
+          <div class="value bullish" id="bullish">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Capital</div>
+          <div class="value capital" id="capital">₹0.00</div>
+        </div>
+        <div class="stat">
+          <div class="label">Bearish Stocks</div>
+          <div class="value bearish" id="bearish">0</div>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="chart"></canvas></div>
     </div>
-    <div class="stat">
-      <div class="label">Bullish Stocks</div>
-      <div class="value bullish" id="bullish">0</div>
-    </div>
-    <div class="stat">
-      <div class="label">Capital</div>
-      <div class="value capital" id="capital">₹0.00</div>
-    </div>
-    <div class="stat">
-      <div class="label">Bearish Stocks</div>
-      <div class="value bearish" id="bearish">0</div>
+
+    <div class="right-panel">
+      <div class="stock-list" id="stockList"></div>
     </div>
   </div>
-  <div class="chart-box"><canvas id="chart"></canvas></div>
-  <div class="stock-list" id="stockList"></div>
-</div>
 
-<script>
-  const TICK = 5000; // 5 secs
-  const HIST_LEN = 60;
-  const initialStocks = [
-    { symbol: 'API', shares: 360, buyPrice: 108415.872 / 360 },
-    { symbol: 'CFCL', shares: 27, buyPrice: 100 },
-    { symbol: 'CLI', shares: 13, buyPrice: 2740 / 13 },
-    { symbol: 'GHL', shares: 90, buyPrice: 100 },
-    { symbol: 'HBL', shares: 10, buyPrice: 157 },
-    { symbol: 'HIDCL', shares: 72, buyPrice: 100 },
-    { symbol: 'HLI', shares: 12, buyPrice: 100 },
-    { symbol: 'HPPL', shares: 10, buyPrice: 100 },
-    { symbol: 'ILI', shares: 12, buyPrice: 2569.1 / 12 },
-    { symbol: 'JBBL', shares: 19, buyPrice: 100 },
-    { symbol: 'LUK', shares: 500, buyPrice: 10 },
-    { symbol: 'MBJC', shares: 10, buyPrice: 100 },
-    { symbol: 'NADEP', shares: 30, buyPrice: 100 },
-    { symbol: 'NGPL', shares: 93, buyPrice: 100 },
-    { symbol: 'NIFRA', shares: 54, buyPrice: 100 },
-    { symbol: 'NIMB', shares: 125, buyPrice: 100 },
-    { symbol: 'NMB', shares: 74, buyPrice: 100 },
-    { symbol: 'NRN', shares: 11, buyPrice: 100 },
-    { symbol: 'RHPL', shares: 40, buyPrice: 100 },
-    { symbol: 'RNLI', shares: 12, buyPrice: 2770 / 12 },
-    { symbol: 'SCB', shares: 25, buyPrice: 576 },
-    { symbol: 'SGIC', shares: 10, buyPrice: 100 },
-    { symbol: 'SJCL', shares: 20, buyPrice: 100 },
-    { symbol: 'SNLI', shares: 16, buyPrice: 186.875 },
-    { symbol: 'SSIS', shares: 93, buyPrice: 10 },
-    { symbol: 'UAIL', shares: 10, buyPrice: 100 }
-  ];
+  <script>
+    const TICK = 5000;
+    const HIST_LEN = 60;
 
-  let stocks = JSON.parse(localStorage.getItem('stocks') || 'null');
-  if (!stocks) {
-    stocks = initialStocks.map(s => ({ ...s, price: s.buyPrice }));
-    localStorage.setItem('stocks', JSON.stringify(stocks));
-  }
+    const initialStocks = [
+      { symbol: 'API', shares: 360, buyPrice: 108415.872 / 360 },
+      { symbol: 'CFCL', shares: 27, buyPrice: 100 },
+      { symbol: 'CLI', shares: 13, buyPrice: 2740 / 13 },
+      { symbol: 'GHL', shares: 90, buyPrice: 100 },
+      { symbol: 'HBL', shares: 10, buyPrice: 157 },
+      { symbol: 'HIDCL', shares: 72, buyPrice: 100 },
+      { symbol: 'HLI', shares: 12, buyPrice: 100 },
+      { symbol: 'HPPL', shares: 10, buyPrice: 100 },
+      { symbol: 'ILI', shares: 12, buyPrice: 2569.1 / 12 },
+      { symbol: 'JBBL', shares: 19, buyPrice: 100 },
+      { symbol: 'LUK', shares: 500, buyPrice: 10 },
+      { symbol: 'MBJC', shares: 10, buyPrice: 100 },
+      { symbol: 'NADEP', shares: 30, buyPrice: 100 },
+      { symbol: 'NGPL', shares: 93, buyPrice: 100 },
+      { symbol: 'NIFRA', shares: 54, buyPrice: 100 },
+      { symbol: 'NIMB', shares: 125, buyPrice: 100 },
+      { symbol: 'NMB', shares: 74, buyPrice: 100 },
+      { symbol: 'NRN', shares: 11, buyPrice: 100 },
+      { symbol: 'RHPL', shares: 40, buyPrice: 100 },
+      { symbol: 'RNLI', shares: 12, buyPrice: 2770 / 12 },
+      { symbol: 'SCB', shares: 25, buyPrice: 576 },
+      { symbol: 'SGIC', shares: 10, buyPrice: 100 },
+      { symbol: 'SJCL', shares: 20, buyPrice: 100 },
+      { symbol: 'SNLI', shares: 16, buyPrice: 186.875 },
+      { symbol: 'SSIS', shares: 93, buyPrice: 10 },
+      { symbol: 'UAIL', shares: 10, buyPrice: 100 }
+    ];
 
-  const profitEl = document.getElementById('profit');
-  const capitalEl = document.getElementById('capital');
-  const bullishEl = document.getElementById('bullish');
-  const bearishEl = document.getElementById('bearish');
-  const stockListEl = document.getElementById('stockList');
-  const timerEl = document.getElementById('timer');
-  const ctx = document.getElementById('chart').getContext('2d');
+    let stocks = JSON.parse(localStorage.getItem('stocks') || 'null');
+    if (!stocks) {
+      stocks = initialStocks.map(s => ({ ...s, price: s.buyPrice }));
+      localStorage.setItem('stocks', JSON.stringify(stocks));
+    }
 
-  const chartData = Array(HIST_LEN).fill(0);
-  const config = {
-    type: 'line',
-    data: {
-      labels: Array.from({ length: HIST_LEN }, (_, i) => i + 1),
-      datasets: [{
-        label: 'Net Profit',
-        data: chartData,
-        borderColor: '#ff2d55',
-        borderWidth: 2,
-        pointRadius: 0,
-        tension: 0.5,
-        fill: false,
-        segment: {
-          borderColor: ctx => {
-            const p0 = ctx.p0.parsed.y;
-            const p1 = ctx.p1.parsed.y;
-            const mid = (p0 + p1) / 2;
-            return mid >= 0 ? '#3bcf81' : '#ff2d55';
-          }
-        }
-      }]
-    },
-    options: {
-      animation: { duration: 600, easing: 'easeOutQuad' },
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { display: false },
-        y: { display: false }
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          enabled: true,
-          callbacks: {
-            label: ctx => {
-              const val = ctx.parsed.y;
-              const prefix = val >= 0 ? 'Profit: ₹' : 'Loss: -₹';
-              return prefix + Math.abs(val).toFixed(2);
+    const profitEl = document.getElementById('profit');
+    const capitalEl = document.getElementById('capital');
+    const bullishEl = document.getElementById('bullish');
+    const bearishEl = document.getElementById('bearish');
+    const stockListEl = document.getElementById('stockList');
+    const timerEl = document.getElementById('timer');
+    const ctx = document.getElementById('chart').getContext('2d');
+
+    const chartData = Array(HIST_LEN).fill(0);
+    const config = {
+      type: 'line',
+      data: {
+        labels: Array.from({ length: HIST_LEN }, (_, i) => i + 1),
+        datasets: [{
+          label: 'Net Profit',
+          data: chartData,
+          borderColor: '#ff2d55',
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.5,
+          fill: false,
+          segment: {
+            borderColor: ctx => {
+              const p0 = ctx.p0.parsed.y;
+              const p1 = ctx.p1.parsed.y;
+              const mid = (p0 + p1) / 2;
+              return mid >= 0 ? '#3bcf81' : '#ff2d55';
             }
-          },
-          backgroundColor: '#1b2735',
-          titleColor: '#fff',
-          bodyColor: '#3bcf81',
-          borderColor: '#3bcf81',
-          borderWidth: 1,
-          padding: 8
+          }
+        }]
+      },
+      options: {
+        animation: { duration: 600, easing: 'easeOutQuad' },
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { display: false },
+          y: { display: false }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            enabled: true,
+            callbacks: {
+              label: ctx => {
+                const val = ctx.parsed.y;
+                const prefix = val >= 0 ? 'Profit: ₹' : 'Loss: -₹';
+                return prefix + Math.abs(val).toFixed(2);
+              }
+            },
+            backgroundColor: '#1b2735',
+            titleColor: '#fff',
+            bodyColor: '#3bcf81',
+            borderColor: '#3bcf81',
+            borderWidth: 1,
+            padding: 8
+          }
         }
       }
-    }
-  };
+    };
 
-  const myChart = new Chart(ctx, config);
+    const myChart = new Chart(ctx, config);
 
-  function renderStockList() {
-    stockListEl.innerHTML = '';
-    stocks.forEach(s => {
-      const div = document.createElement('div');
-      div.className = 'stock-item';
-      div.innerHTML = `
-        <div>
-          <span class="stock-symbol">${s.symbol}</span> &nbsp;
-          <span style="opacity:0.7">x${s.shares}</span>
-        </div>
-        <div class="stock-price">₹${s.price.toFixed(2)}</div>
-      `;
-      stockListEl.appendChild(div);
-    });
-  }
-
-  function computeMetrics() {
-    const totalMarket = stocks.reduce((sum, s) => sum + s.price * s.shares, 0);
-    const totalCost = stocks.reduce((sum, s) => sum + s.buyPrice * s.shares, 0);
-    const netProfit = totalMarket - totalCost;
-    const bullish = stocks.filter(s => s.price > s.buyPrice).length;
-    const bearish = stocks.filter(s => s.price < s.buyPrice).length;
-    return { totalMarket, totalCost, netProfit, bullish, bearish };
-  }
-
-  function updateUI(metrics) {
-    profitEl.innerText = (metrics.netProfit >= 0 ? '₹' : '-₹') + Math.abs(metrics.netProfit).toFixed(2);
-    capitalEl.innerText = '₹' + metrics.totalMarket.toFixed(2);
-    bullishEl.innerText = metrics.bullish;
-    bearishEl.innerText = metrics.bearish;
-  }
-
-  function pushChartValue(val) {
-    const data = myChart.data.datasets[0].data;
-    data.push(+val.toFixed(2));
-    if (data.length > HIST_LEN) data.shift();
-    const mx = Math.max(...data.map(Math.abs));
-    const pad = Math.max(50, mx * 1.1);
-    myChart.options.scales.y.min = -pad;
-    myChart.options.scales.y.max = pad;
-    myChart.update();
-  }
-
-  async function fetchPricesFromAPI() {
-const symbols = ['API', 'CFCL', 'CLI', 'GHL', 'HBL', 'HIDCL', 'HLI', 'HPPL', 'ILI', 'JBBL', 'LUK', 'MBJC', 'NADEP', 'NGPL', 'NIFRA', 'NIMB', 'NMB', 'NRN', 'RHPL', 'RNLI', 'SCB', 'SGIC', 'SJCL', 'SNLI', 'SSIS', 'UAIL'];
-    const proxyUrl = 'https://corsproxy.io/?';
-    console.log('→ fetchPricesFromAPI() called at', new Date().toLocaleTimeString());
-    try {
-      const results = await Promise.all(symbols.map(async symbol => {
-        const url = `${proxyUrl}https://nepsetty.kokomo.workers.dev/api/stock?symbol=${symbol}`;
-        console.log('Fetching URL:', url);
-        const res = await fetch(url);
-        console.log('Response status for', symbol, res.status);
-        const data = await res.json();
-        console.log('Data for', symbol, data);
-        return { symbol, price: data.ltp };
-      }));
-
-      results.forEach(np => {
-        if (np.price != null) {
-          const s = stocks.find(x => x.symbol === np.symbol);
-          if (s) {
-            console.log(`Updating ${np.symbol}: ${s.price} → ${np.price}`);
-            s.price = +np.price;
-          }
-        }
+    function renderStockList() {
+      stockListEl.innerHTML = '';
+      stocks.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'stock-item';
+        div.innerHTML = `
+          <div>
+            <span class="stock-symbol">${s.symbol}</span> &nbsp;
+            <span style="opacity:0.7">x${s.shares}</span>
+          </div>
+          <div class="stock-price">₹${s.price.toFixed(2)}</div>
+        `;
+        stockListEl.appendChild(div);
       });
+    }
 
-      console.log('Stocks after update:', stocks);
+    function computeMetrics() {
+      const totalMarket = stocks.reduce((sum, s) => sum + s.price * s.shares, 0);
+      const totalCost = stocks.reduce((sum, s) => sum + s.buyPrice * s.shares, 0);
+      const netProfit = totalMarket - totalCost;
+      const bullish = stocks.filter(s => s.price > s.buyPrice).length;
+      const bearish = stocks.filter(s => s.price < s.buyPrice).length;
+      return { totalMarket, totalCost, netProfit, bullish, bearish };
+    }
+
+    function updateUI(metrics) {
+      profitEl.innerText = (metrics.netProfit >= 0 ? '₹' : '-₹') + Math.abs(metrics.netProfit).toFixed(2);
+      capitalEl.innerText = '₹' + metrics.totalMarket.toFixed(2);
+      bullishEl.innerText = metrics.bullish;
+      bearishEl.innerText = metrics.bearish;
+    }
+
+    function pushChartValue(val) {
+      const data = myChart.data.datasets[0].data;
+      data.push(+val.toFixed(2));
+      if (data.length > HIST_LEN) data.shift();
+      const mx = Math.max(...data.map(Math.abs));
+      const pad = Math.max(50, mx * 1.1);
+      myChart.options.scales.y.min = -pad;
+      myChart.options.scales.y.max = pad;
+      myChart.update();
+    }
+
+    async function fetchPricesFromAPI() {
+      const symbols = stocks.map(s => s.symbol);
+      const proxyUrl = 'https://corsproxy.io/?';
+      try {
+        const results = await Promise.all(symbols.map(async symbol => {
+          const url = `${proxyUrl}https://nepsetty.kokomo.workers.dev/api/stock?symbol=${symbol}`;
+          const res = await fetch(url);
+          const data = await res.json();
+          return { symbol, price: data.ltp };
+        }));
+
+        results.forEach(np => {
+          if (np.price != null) {
+            const s = stocks.find(x => x.symbol === np.symbol);
+            if (s) s.price = +np.price;
+          }
+        });
+
+        localStorage.setItem('stocks', JSON.stringify(stocks));
+        renderStockList();
+        const metrics = computeMetrics();
+        updateUI(metrics);
+        pushChartValue(metrics.netProfit);
+      } catch (err) {
+        console.error('Fetch error:', err);
+      }
+    }
+
+    renderStockList();
+    const initialMetrics = computeMetrics();
+    updateUI(initialMetrics);
+    pushChartValue(initialMetrics.netProfit);
+
+    let sec = TICK / 1000;
+    setInterval(() => {
+      sec--;
+      if (sec <= 0) {
+        fetchPricesFromAPI();
+        sec = TICK / 1000;
+      }
+      timerEl.innerText = sec + 's';
+    }, 1000);
+
+    window.fetchAndApplyPrices = function (newPrices) {
+      newPrices.forEach(np => {
+        const s = stocks.find(x => x.symbol === np.symbol);
+        if (s) s.price = +np.price;
+      });
       localStorage.setItem('stocks', JSON.stringify(stocks));
       renderStockList();
       const metrics = computeMetrics();
       updateUI(metrics);
       pushChartValue(metrics.netProfit);
-    } catch (err) {
-      console.error('Error in fetchPricesFromAPI:', err);
-    }
-  }
-
-  // Initial render
-  renderStockList();
-  const initialMetrics = computeMetrics();
-  updateUI(initialMetrics);
-  pushChartValue(initialMetrics.netProfit);
-
-  // Countdown and periodic fetch
-  let sec = TICK / 1000;
-  setInterval(() => {
-    sec--;
-    if (sec <= 0) {
-      fetchPricesFromAPI();
-      sec = TICK / 1000;
-    }
-    timerEl.innerText = sec + 's';
-  }, 1000);
-
-  // Expose manual update helper
-  window.fetchAndApplyPrices = function (newPrices) {
-    newPrices.forEach(np => {
-      const s = stocks.find(x => x.symbol === np.symbol);
-      if (s) s.price = +np.price;
-    });
-    localStorage.setItem('stocks', JSON.stringify(stocks));
-    renderStockList();
-    const metrics = computeMetrics();
-    updateUI(metrics);
-    pushChartValue(metrics.netProfit);
-  };
-</script>
+    };
+  </script>
 </body>
 </html>
